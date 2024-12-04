@@ -1,8 +1,0 @@
-{
-  "Name":                       "Polaris Shafts Brake",
-  "Type":                       "Brake",
-  "Template":                   "BrakeShafts",
-
-  "Shaft Inertia":              0.4,
-  "Maximum Torque":             2000
-}
