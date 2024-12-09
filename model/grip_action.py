@@ -25,7 +25,7 @@ class Gripper_Action_Functions():
         """
         Calculate the trajectory for the gripper to follow based on the desired position and orientation.
         """
-        offset = chrono.ChVector3d(0, 0, 1.5)  # Adjusted offset
+        offset = chrono.ChVector3d(0, 0, 0.0)  # Adjusted offset
         desired_pos = [
             desired_position.x - offset.x,
             desired_position.y - offset.y,

@@ -2,7 +2,11 @@ import pychrono as chrono
 import pychrono.irrlicht as chronoirr
 import sys
 import numpy as np
-import os,time
+import os,csv, argparse
+
+parser = argparse.ArgumentParser(description="A script to demonstrate inline arguments.")
+parser.add_argument("arg", type=int, help="An integer argument passed from the command line.")
+args = parser.parse_args()
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
@@ -20,7 +24,7 @@ system.SetCollisionSystemType(chrono.ChCollisionSystem.Type_BULLET)
 
 system.SetGravitationalAcceleration(chrono.ChVector3d(0, 0, -9.81))
 
-offset = chrono.ChVector3d(0, 0, 1.5)
+offset = chrono.ChVector3d(0, 0, 0)
 gripper = LRV_Arm(system, offset)
 ik_solver = RobotArmInverseKinematicsSolver()
 ### Create environment
@@ -38,20 +42,23 @@ system.Add(floor)
 contact_material = chrono.ChContactMaterialNSC()
 contact_material.SetRollingFriction(0.95)
 contact_material.SetFriction(0.95)
-# ball1 = chrono.ChBodyEasySphere(0.15, 1, True, True, contact_material)
-ball1 = chrono.ChBodyEasyBox(0.3, 0.5, 0.3, 100, True, True, contact_material)
+ball1 = chrono.ChBodyEasySphere(0.15, 1, True, True, contact_material)
 ball1.GetVisualShape(0).SetTexture(chrono.GetChronoDataFile("textures/blue.png"))
 ball1.SetName("blue_ball")
-rand_x = np.random.uniform(-1, 1)
-seed = np.random.random()
-if seed>0.5:
-    rand_y = np.random.uniform(-2.5, -1.5)
-else:
-    rand_y = np.random.uniform(1.5, 2.5)
-print('!!random position:', rand_x, rand_y)
-ball1.SetPos(chrono.ChVector3d(rand_x, rand_y, 3))
+
+# create random position for the ball
+rand_r = np.random.uniform(1.0, 2.5)
+print(rand_r)
+rand_theta = np.random.uniform(0, 2 * np.pi)
+rand_phi = np.random.uniform(0, np.pi/2)
+# convert to cartesian
+rand_x = rand_r * np.sin(rand_phi) * np.cos(rand_theta)
+rand_y = rand_r * np.sin(rand_phi) * np.sin(rand_theta)
+rand_z = rand_r * np.cos(rand_phi)
+
+ball1.SetPos(chrono.ChVector3d(rand_x, rand_y, rand_z))
 ball1.SetRot(chrono.Q_ROTATE_Y_TO_Z)
-ball1.SetFixed(False)
+ball1.SetFixed(True)
 ball1.EnableCollision(True)
 system.Add(ball1)
 gripper.add_object("blue_ball")
@@ -60,13 +67,13 @@ gripper.add_object("blue_ball")
 gripper_action = Gripper_Action_Functions(gripper)
 
 
-vis = chronoirr.ChVisualSystemIrrlicht(system)
-vis.SetCameraVertical(chrono.CameraVerticalDir_Z)
-vis.SetWindowSize(1024, 768)
-vis.SetWindowTitle("robot arm gripper")
-vis.Initialize()
-vis.AddSkyBox()
-vis.AddCamera(chrono.ChVector3d(-4.5, 0, 4.5), chrono.ChVector3d(0, 0, 0))
+# vis = chronoirr.ChVisualSystemIrrlicht(system)
+# vis.SetCameraVertical(chrono.CameraVerticalDir_Z)
+# vis.SetWindowSize(1024, 768)
+# vis.SetWindowTitle("robot arm gripper")
+# vis.Initialize()
+# vis.AddSkyBox()
+# vis.AddCamera(chrono.ChVector3d(-4.5, 0, 4.5), chrono.ChVector3d(0, 0, 0))
 # Reduce the light magnitude
 # vis.AddLightWithShadow(chrono.ChVector3d(10, 10, 100), chrono.ChVector3d(0, 0, -0.5), 100, 1, 9, 90, 512)
 
@@ -84,31 +91,42 @@ render_step_size = 1.0 / 20  # FPS = 25
 render_steps = math.ceil(render_step_size / timestep)
 render_frame = 0
 save_frames = False
-while vis.Run():
+theta = [np.random.uniform(-np.pi,np.pi),np.random.uniform(0,np.pi/2),np.random.uniform(-np.pi/2,np.pi/2),np.random.uniform(-np.pi/2,np.pi/2)]
+print('random theta:', theta)
+exp_ind = args.arg # experiment index
+
+while True:
     sim_time = system.GetChTime()
     system.DoStepDynamics(timestep)
 
-    
-    # gripper.rotate_motor(gripper.motor_shoulder_biceps, 1.57)
     if step_number % render_steps == 0:
-        vis.BeginScene()
-        vis.Render()
-        vis.EndScene()
-
-        # First gripper action from time 3 to 13  
-        gripper_action.gripper_pick(sim_time, ball1, approach_orientation='side', time=[3, 13])
-
-        # # Second gripper action from time 12 to 19
-        gripper_action.gripper_pick(sim_time, ball1, approach_orientation='top', time=[17, 27])
-
-
-        if save_frames:
-            filename = project_root+'/scenarios/IMG/img_' + str(render_frame) + '.jpg'
-            print('save frame:', filename)
-            vis.WriteImageToFile(filename)
-            render_frame += 1
-            
-
+        # vis.BeginScene()
+        # vis.Render()
+        # vis.EndScene()
+        # set arm control:
+        # if 0.5<sim_time<0.7:
+        #     des_pos = [rand_x, rand_y, rand_z]
+        #     des_orientation = 'top' if rand_z < 1.0 else 'side'
+        #     iksolver = RobotArmInverseKinematicsSolver()
+        #     theta = iksolver.inverse_kinematics_solver(des_pos, des_orientation)
         
-    rt_timer.Spin(timestep)
+        # theta = [np.random.uniform(-np.pi,np.pi),]
+        if 0.7<sim_time<2.0:
+            gripper.rotate_motor(gripper.motor_base_shoulder, theta[0])
+            gripper.rotate_motor(gripper.motor_shoulder_biceps, theta[1])
+            gripper.rotate_motor(gripper.motor_biceps_elbow, theta[2])
+            gripper.rotate_motor(gripper.motor_elbow_eef, theta[3])
+        if sim_time > 4.0:
+            local_pt = gripper.endoffactor.TransformPointLocalToParent(chrono.ChVector3d(0, 0.0, 0.2))
+            ball1.SetPos(local_pt)
+            # record data
+            training_data = np.savetxt(project_root+'/data/eff_pos/exp_'+str(exp_ind)+'.csv', np.array([rand_x, rand_y, rand_z,theta[0],theta[1],theta[2],theta[3]]), delimiter=',',fmt='%f')
+            break
+
+        # if save_frames:
+        #     filename = project_root+'/scenarios/IMG/img_' + str(render_frame) + '.jpg'
+        #     print('save frame:', filename)
+        #     vis.WriteImageToFile(filename)
+        #     render_frame += 1
+        
     step_number += 1
