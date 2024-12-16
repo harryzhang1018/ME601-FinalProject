@@ -15,7 +15,7 @@ print(f'Using device: {device}')
 data_folder = 'data/eff_pos'
 
 # Number of training files to include (set n)
-n = 5000  # Control how many files to include
+n = 100000  # Control how many files to include
 
 # Read and concatenate specified CSV files
 data = []
@@ -46,18 +46,18 @@ y_test = torch.tensor(y, dtype=torch.float32).to(device)
 # Create DataLoader
 train_dataset = TensorDataset(X_train, y_train)
 test_dataset = TensorDataset(X_test, y_test)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-# Define the neural network
+# Define the neural network with dropout layers
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
         self.fc1 = nn.Linear(3, 64)
         self.fc2 = nn.Linear(64, 256)
         self.fc3 = nn.Linear(256, 1024)
-        self.fc4 = nn.Linear(1024, 1024)
-        self.fc5 = nn.Linear(1024, 512)
+        self.fc4 = nn.Linear(1024, 2048)
+        self.fc5 = nn.Linear(2048, 512)
         self.fc6 = nn.Linear(512, 256)
         self.fc7 = nn.Linear(256, 64)
         self.fc8 = nn.Linear(64, 4)
@@ -76,7 +76,7 @@ class NeuralNetwork(nn.Module):
 # Initialize the model, loss function, and optimizer
 model = NeuralNetwork().to(device)
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.0005)
+optimizer = optim.Adam(model.parameters(), lr=0.00005)
 
 # Training loop
 num_epochs = 3000
@@ -105,11 +105,6 @@ with torch.no_grad():
         test_loss += loss.item()
     test_loss /= len(test_loader)
     print(f'Test Loss: {test_loss:.4f}')
-
-# Load the model weights
-model = NeuralNetwork().to(device)
-model.load_state_dict(torch.load('model_weights.pth'))
-model.eval()
 
 # Example prediction after loading the model
 sample_input = X_test[0:1]

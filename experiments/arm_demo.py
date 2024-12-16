@@ -120,7 +120,7 @@ while True:
             local_pt = gripper.endoffactor.TransformPointLocalToParent(chrono.ChVector3d(0, 0.0, 0.2))
             ball1.SetPos(local_pt)
             # record data
-            training_data = np.savetxt(project_root+'/data/eff_pos/exp_'+str(exp_ind)+'.csv', np.array([rand_x, rand_y, rand_z,theta[0],theta[1],theta[2],theta[3]]), delimiter=',',fmt='%f')
+            training_data = np.savetxt(project_root+'/data/eff_pos/exp_'+str(exp_ind)+'.csv', np.array([local_pt.x, local_pt.y, local_pt.z,theta[0],theta[1],theta[2],theta[3]]), delimiter=',',fmt='%f')
             break
 
         # if save_frames:

@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 script_path = project_root+"/experiments/arm_demo.py"
 
 # Run the script for 1000 iterations
-for i in range(1, 1001):
+for i in range(1, 100001):
     print(f"Running iteration {i}...")
     result = subprocess.run(["python3", script_path, str(i)], capture_output=True, text=True)
     
